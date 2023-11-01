@@ -16,7 +16,6 @@ def get_director(x):
             return i['name']
     return np.nan
 
-# Chuyển thêm keywords
 def filter_keywords(x, s):
     words = []
     for i in x:
@@ -25,8 +24,9 @@ def filter_keywords(x, s):
     return words
 
 cols = ['id', 'imdb_id', 'title', 'genres', 'description', 'cast', \
-        'cast_size', 'crew_size', 'director', 'keywords', 'popularity', 'vote_average',\
-         'vote_count', 'year', 'wr', 'spoken_language']
+         'director', 'keywords', 'popularity', 'vote_average',\
+         'vote_count', 'year', 'wr', 'spoken_languages']
+
 
 def movie_feature(metadata_path, links_small_path, credits_path,keywords_path, \
                   percentile=0.95, more_weight_on = None, \
@@ -67,27 +67,24 @@ def movie_feature(metadata_path, links_small_path, credits_path,keywords_path, \
     smd['tagline'] = smd['tagline'].fillna('')
     smd['description'] = smd['overview'] + smd['tagline']
     smd['description'] = smd['description'].fillna('')
-
-    # transform text to vector
-    # tf = word_to_vec(analyzer='word',ngram_range=(1, 2),min_df=0, stop_words='english')
-    # tfidf_matrix = tf.fit_transform(smd['description'])
     
     # merge credit + keywords
     smd = smd.merge(credits, on='id')
     smd = smd.merge(keywords, on='id')
 
     # feature engineering
-    smd['cast'] = smd['cast'].apply(literal_eval)
-    smd['crew'] = smd['crew'].apply(literal_eval)
-    smd['keywords'] = smd['keywords'].apply(literal_eval)
-    smd['cast_size'] = smd['cast'].apply(lambda x: len(x))
-    smd['crew_size'] = smd['crew'].apply(lambda x: len(x))
-    smd['director'] = smd['crew'].apply(get_director)
-    smd['cast'] = smd['cast'].apply(lambda x: [i['name'] for i in \
-                                               x] if isinstance(x, list) else [])
-    smd['cast'] = smd['cast'].apply(lambda x: x[:3] if len(x) >=3 else x)
-    smd['keywords'] = smd['keywords'].apply(lambda x: [i['name'] \
+    literal_features = ['cast', 'spoken_languages', 'genres', 'keywords']
+    for fearture in literal_features:
+        smd[fearture] = smd[fearture].apply(literal_eval)
+        smd[fearture] = smd[fearture].apply(lambda x: [i['name'] \
                                             for i in x] if isinstance(x, list) else [])
+    smd['crew'] = smd['crew'].apply(literal_eval)
+    smd['director'] = smd['crew'].apply(get_director)
+    # smd['cast'] = smd['cast'].apply(lambda x: [i['name'] for i in \
+                                            #    x] if isinstance(x, list) else [])
+    smd['cast'] = smd['cast'].apply(lambda x: x[:3] if len(x) >=3 else x)
+    # smd['keywords'] = smd['keywords'].apply(lambda x: [i['name'] \
+    #                                         for i in x] if isinstance(x, list) else [])
     # Strip Spaces and Convert to Lowercase 
     smd['cast'] = smd['cast'].apply(lambda x: [str.lower(\
         i.replace(" ", "")) for i in x])
@@ -104,9 +101,10 @@ def movie_feature(metadata_path, links_small_path, credits_path,keywords_path, \
     smd['keywords'] = smd['keywords'].apply(lambda x: \
                                             [str.lower(i.replace(" ", "")) for i in x])
 
-    smd[['spoken_languages', 'genres']] = smd[['spoken_languages', 'genres']].apply(\
-        lambda x: [i['name'] for i in x] if isinstance(x, list) else [])
-    
-    
+    # smd['spoken_languages'] = smd['spoken_languages'].apply(\
+    #     lambda x: [i['name'] for i in x] if isinstance(x, list) else [])
+
+    # smd['genres'] = smd['genres'].apply(\
+    #     lambda x: [i['name'] for i in x] if isinstance(x, list) else [])
     return smd[cols]
     
