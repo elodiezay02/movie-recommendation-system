@@ -23,22 +23,39 @@ def filter_keywords(x, s):
             words.append(i)
     return words
 
-cols = ['id', 'imdb_id', 'title', 'genres', 'description', 'cast', \
+cols = ['id', 'movieId', 'title', 'genres', 'description', 'cast', \
          'director', 'keywords', 'popularity', 'vote_average',\
          'vote_count', 'year', 'wr', 'spoken_languages']
 
-
-def movie_feature(metadata_path, links_small_path, credits_path,keywords_path, \
-                  percentile=0.95, more_weight_on = None, \
-                    stemmer = SnowballStemmer('english'), cols=cols):
-    # read dataset
+def read_dataset(metadata_path, links_small_path, credits_path,keywords_path):
     meta = pd.read_csv(metadata_path)
     links_small = pd.read_csv(links_small_path)
     credits = pd.read_csv(credits_path)
     keywords = pd.read_csv(keywords_path)
+    return meta, links_small, credits, keywords
+
+def cal_weighted_rating(meta):
+    vote_counts = meta[meta['vote_count'].notnull()]['vote_count'].astype('int')
+    vote_averages = meta[meta['vote_average'].notnull()]['vote_average'].astype('int')
+    C = vote_averages.mean()
+    m = vote_counts.quantile(percentile)
+
+    meta = meta[(meta['vote_count'].notnull()) \
+                     & (meta['vote_average'].notnull())]
+    meta['vote_count'] = meta['vote_count'].astype('int')
+    meta['vote_average'] = meta['vote_average'].astype('int')
+    meta['wr'] = meta.apply(lambda x: weighted_rating(x, m, C), axis=1)
+    
+def movie_feature(metadata_path, links_small_path, credits_path,keywords_path, \
+                  percentile=0.95, more_weight_on = None, \
+                    stemmer = SnowballStemmer('english'), cols=cols):
+    # read dataset
+    meta, links_small, credits, keywords = read_dataset(metadata_path, \
+        links_small_path, credits_path,keywords_path)
 
     # change type + drop
-    links_small = links_small[links_small['tmdbId'].notnull()]['tmdbId'].astype('int')
+    links_small = links_small[links_small['tmdbId'].notnull()]
+    links_small['tmdbId'] = links_small['tmdbId'].astype('int')
     meta = meta.drop([19730, 29503, 35587])
     meta['id'] = meta['id'].astype('int')
     meta['year'] = pd.to_datetime(meta['release_date'], errors='coerce').apply(\
@@ -46,31 +63,21 @@ def movie_feature(metadata_path, links_small_path, credits_path,keywords_path, \
     keywords['id'] = keywords['id'].astype('int')
     credits['id'] = credits['id'].astype('int')
 
-    vote_counts = meta[meta['vote_count'].notnull()]['vote_count'].astype('int')
-    vote_averages = meta[meta['vote_average'].notnull()]['vote_average'].astype('int')
-    C = vote_averages.mean()
-    m = vote_counts.quantile(percentile)
-    # quantified movies: have more vote counts than ...(percentile)% others
-    # qualified = meta[(meta['vote_count'] >= m) & (meta['vote_count'].notnull()) \
-    #                  & (meta['vote_average'].notnull())]
-    meta = meta[(meta['vote_count'].notnull()) \
-                     & (meta['vote_average'].notnull())]
-    meta['vote_count'] = meta['vote_count'].astype('int')
-    meta['vote_average'] = meta['vote_average'].astype('int')
-    meta['wr'] = meta.apply(lambda x: weighted_rating(x, m, C), axis=1)
-    # meta = qualified.sort_values('wr', ascending=False)
+    # calcualte weighted rating for movies
+    cal_weighted_rating(meta)
 
     # merge meta + link small => create a smaller dataset for recommend
-    smd = meta[meta['id'].isin(links_small)]
+    smd = meta[meta['id'].isin(links_small['tmdbId'])]
 
     # create description feature
     smd['tagline'] = smd['tagline'].fillna('')
     smd['description'] = smd['overview'] + smd['tagline']
     smd['description'] = smd['description'].fillna('')
     
-    # merge credit + keywords
+    # merge credit + keywords + links_small
     smd = smd.merge(credits, on='id')
     smd = smd.merge(keywords, on='id')
+    smd = smd.merge(links_small, left_on='id', right_on='tmdbId')
 
     # feature engineering
     literal_features = ['cast', 'spoken_languages', 'genres', 'keywords']
@@ -80,11 +87,10 @@ def movie_feature(metadata_path, links_small_path, credits_path,keywords_path, \
                                             for i in x] if isinstance(x, list) else [])
     smd['crew'] = smd['crew'].apply(literal_eval)
     smd['director'] = smd['crew'].apply(get_director)
-    # smd['cast'] = smd['cast'].apply(lambda x: [i['name'] for i in \
-                                            #    x] if isinstance(x, list) else [])
+
+    # top 3 actors
     smd['cast'] = smd['cast'].apply(lambda x: x[:3] if len(x) >=3 else x)
-    # smd['keywords'] = smd['keywords'].apply(lambda x: [i['name'] \
-    #                                         for i in x] if isinstance(x, list) else [])
+   
     # Strip Spaces and Convert to Lowercase 
     smd['cast'] = smd['cast'].apply(lambda x: [str.lower(\
         i.replace(" ", "")) for i in x])
@@ -93,6 +99,7 @@ def movie_feature(metadata_path, links_small_path, credits_path,keywords_path, \
     if more_weight_on:
         smd[more_weight_on] = smd[more_weight_on].apply(lambda x: [x,x,x])
     
+    # choose keywords appear more than once + stemming
     s = smd.apply(lambda x: pd.Series(x['keywords']),axis=1).stack().reset_index(level=1, drop=True)
     s = s.value_counts()
     s = s[s > 1]
@@ -101,10 +108,5 @@ def movie_feature(metadata_path, links_small_path, credits_path,keywords_path, \
     smd['keywords'] = smd['keywords'].apply(lambda x: \
                                             [str.lower(i.replace(" ", "")) for i in x])
 
-    # smd['spoken_languages'] = smd['spoken_languages'].apply(\
-    #     lambda x: [i['name'] for i in x] if isinstance(x, list) else [])
-
-    # smd['genres'] = smd['genres'].apply(\
-    #     lambda x: [i['name'] for i in x] if isinstance(x, list) else [])
     return smd[cols]
     
