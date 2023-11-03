@@ -34,7 +34,7 @@ def read_dataset(metadata_path, links_small_path, credits_path,keywords_path):
     keywords = pd.read_csv(keywords_path)
     return meta, links_small, credits, keywords
 
-def cal_weighted_rating(meta):
+def cal_weighted_rating(meta, percentile=0.95):
     vote_counts = meta[meta['vote_count'].notnull()]['vote_count'].astype('int')
     vote_averages = meta[meta['vote_average'].notnull()]['vote_average'].astype('int')
     C = vote_averages.mean()
@@ -64,7 +64,17 @@ def movie_feature(metadata_path, links_small_path, credits_path,keywords_path, \
     credits['id'] = credits['id'].astype('int')
 
     # calcualte weighted rating for movies
-    cal_weighted_rating(meta)
+    # cal_weighted_rating(meta)
+    vote_counts = meta[meta['vote_count'].notnull()]['vote_count'].astype('int')
+    vote_averages = meta[meta['vote_average'].notnull()]['vote_average'].astype('int')
+    C = vote_averages.mean()
+    m = vote_counts.quantile(percentile)
+
+    meta = meta[(meta['vote_count'].notnull()) \
+                     & (meta['vote_average'].notnull())]
+    meta['vote_count'] = meta['vote_count'].astype('int')
+    meta['vote_average'] = meta['vote_average'].astype('int')
+    meta['wr'] = meta.apply(lambda x: weighted_rating(x, m, C), axis=1)
 
     # merge meta + link small => create a smaller dataset for recommend
     smd = meta[meta['id'].isin(links_small['tmdbId'])]
