@@ -5,6 +5,8 @@ from ast import literal_eval
 from nltk.stem.snowball import SnowballStemmer
 from nltk.stem.wordnet import WordNetLemmatizer
 
+import warnings; warnings.simplefilter('ignore')
+
 def weighted_rating(x, m, C):
     v = x['vote_count']
     R = x['vote_average']
