@@ -27,15 +27,16 @@ def collaborative_filtering(input, algorithm, n_suggestion=10):
         return data
         
     def fit_predict(algo, path_csv):
+        """
+        Train and predict in testset
+        
+        Returns:
+        A tuple containing predictions and RMSE of the algorithm in testset
+        """
         data = load_data(path_csv)
         
-        trainset = data.build_full_trainset()
-
-        algo = algo
-        
-        # fit
         trainset, testset = train_test_split(data, test_size=0.25)
-
+        # fit
         algo.fit(trainset)
         predictions = algo.test(testset)
         
