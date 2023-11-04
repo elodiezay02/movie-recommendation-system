@@ -18,27 +18,26 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.corpus import wordnet
 from surprise import Reader, Dataset, SVD
 from surprise.model_selection import cross_validate
-
+from get_movie_features import movie_feature
 
 import warnings; warnings.simplefilter('ignore')
 
+# credits_ = r'E:\School\DE_AN\Movie-Recommendation-System\src\data\credits.csv'
+# keywords = r'E:\School\DE_AN\Movie-Recommendation-System\src\data\keywords.csv'
+# links_small = r'E:\School\DE_AN\Movie-Recommendation-System\src\data\links_small.csv'
+# movies_metadata = r'E:\School\DE_AN\Movie-Recommendation-System\src\data\movies_metadata.csv'
+
+# smd = movie_feature(movies_metadata, links_small, credits_, keywords, more_weight_on='director')
+# vec_to_word = TfidfVectorizer(analyzer='word',ngram_range=(1, 2),min_df=0.0, stop_words='english')
 
 # In[8]:
 
 
-def baseline_model(metadata_path, links_small_path, title):
-    meta = pd.read_csv(metadata_path)
-    links_small = pd.read_csv(links_small_path)
-    meta['genres'] = meta['genres'].fillna('[]').apply(literal_eval).apply(lambda x: [i['name'] for i in x] if isinstance(x, list) else [])
-    links_small = links_small[links_small['tmdbId'].notnull()]['tmdbId'].astype('int')
-    meta = meta.drop([19730, 29503, 35587])
-    meta['id'] = meta['id'].astype('int')
-    smd = meta[meta['id'].isin(links_small)]
+def baseline_model(smd, title, vec_to_word):
     smd['tagline'] = smd['tagline'].fillna('')
     smd['description'] = smd['overview'] + smd['tagline']
     smd['description'] = smd['description'].fillna('')
-    tf = TfidfVectorizer(analyzer='word',ngram_range=(1, 2),min_df=0, stop_words='english')
-    tfidf_matrix = tf.fit_transform(smd['description'])
+    tfidf_matrix = vec_to_word.fit_transform(smd['description'])
     cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
     smd = smd.reset_index()
     titles = smd['title']
@@ -55,7 +54,7 @@ def baseline_model(metadata_path, links_small_path, title):
 # In[9]:
 
 
-baseline_model('movies_metadata.csv', 'links_small.csv', 'Forrest Gump')
+# print(top_10_content_based(smd, 'Forrest Gump', vec_to_word))
 
 
 # In[ ]:
