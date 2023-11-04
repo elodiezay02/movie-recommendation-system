@@ -17,7 +17,17 @@ from collections import defaultdict
 
 
 def collaborative_filtering(input, algorithm, n_suggestion=10):
-
+    """
+    Using collaborative filtering to suggest n movies for users
+    Input:
+        input: csv file
+        algorithm: like SVD(), NMF()
+        n_suggestion: number of movies recommended for each user
+     Return:
+     A dict where keys are user (raw) ids and values are lists of tuples:
+            [(raw item id, rating estimation), ...] of size n.
+    """
+    
     def load_data(path_csv):
         reader = Reader()
         ratings = pd.read_csv(path_csv)
@@ -29,19 +39,18 @@ def collaborative_filtering(input, algorithm, n_suggestion=10):
     def fit_predict(algo, path_csv):
         """
         Train and predict in testset
-        
+
         Returns:
         A tuple containing predictions and RMSE of the algorithm in testset
         """
+
         data = load_data(path_csv)
-        
         trainset, testset = train_test_split(data, test_size=0.25)
         # fit
         algo.fit(trainset)
         predictions = algo.test(testset)
         
         return predictions, accuracy.rmse(predictions)
-    
     
     def get_top_n(algo, path_csv, n=10):
         """Return the top-N recommendation for each user from a set of predictions.
