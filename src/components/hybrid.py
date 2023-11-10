@@ -38,7 +38,8 @@ def train_test_df(rating_data, full_data): #full_data là file data cuối cùng
     '''Merge full_dataset với rating, chia train: 80, test: 20'''
     data = rating_data.merge(full_data, on = 'movieId')
     train_df, test_df = train_test_split(data, test_size = 0.2, random_state = 42, stratify=data['userId'])
-    return train_df, test_df '''train_df, test_df = train_test(rating_path, full_data_path)'''
+    return train_df, test_df
+    '''train_df, test_df = train_test(rating_path, full_data_path)'''
     
 def convert_traintest_dataframe_forsurprise(train_df, test_df): #train, test_df lấy ở hàm train_test_df
     '''Dùng để convert trainset, testset để dùng cho thư viện surprise'''
@@ -62,7 +63,7 @@ def knnbaseline(train_convert, test_convert):
     accuracy.rmse(knnbaseline_predictions)
     accuracy.mae(knnbaseline_predictions)
     print("Done!")
-    return knnbaseline_algo #phải đặt tên 1 biến là knnbaseline_algo = knnbaseline(trainset, testset):
+    return knnbaseline_algo #phải đặt tên 1 biến là knnbaseline_algo = knnbaseline(trainset, testset)
 
 def svd(train_convert, test_convert):
     svd_algo = SVD()
@@ -168,7 +169,8 @@ def make_useinfo_df(full_data, train_df): #full_data - get_movie_feature; train_
         user_avg_rating /= movies_rated_count
         row_df = pd.DataFrame([[user_id, user_vector, user_avg_rating, movies_rated_count]], 
                           columns=['userId', 'user_vector', 'avg_rating', 'num_movies_rated'])
-    return user_df = pd.concat([user_df, row_df], ignore_index=True)
+        user_df = pd.concat([user_df, row_df], ignore_index=True)
+    return user_df
     '''đặt biến user_info = make_useinfo_df(full_data, train_df): trae về dataframe'''
 
 def user_top_genre(userId, user_info): #user_info la dataframe dùng hàm make_useinfo_df(fulldata_path, trainset_path), type(userId) = int
