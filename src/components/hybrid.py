@@ -22,7 +22,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.metrics.pairwise import linear_kernel, cosine_similarity
 
 #read dataser
-def read_data(data_path, ):
+def read_data(data_path):
     '''read csv file, bỏ column Unnamed: 0'''
     df = pd.read_csv(data_path)
     col = 'Unnamed: 0'
