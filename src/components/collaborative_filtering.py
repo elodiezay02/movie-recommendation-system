@@ -48,9 +48,14 @@ def collaborative_filtering(input, algorithm, n_suggestion=10):
         trainset, testset = train_test_split(data, test_size=0.25)
         # fit
         algo.fit(trainset)
-        predictions = algo.test(testset)
+        predictions_test = algo.test(testset)
         
-        return predictions, accuracy.rmse(predictions)
+        # Real predict: predict ratings for all pairs (u, i) that are NOT in the training set.
+        full_trainset = data.build_full_trainset()
+        anti_testset = full_trainset.build_anti_testset()
+        predictions = algo.test(anti_testset)
+
+        return predictions, accuracy.rmse(predictions_test)
     
     def get_top_n(algo, path_csv, n=10):
         """Return the top-N recommendation for each user from a set of predictions.
