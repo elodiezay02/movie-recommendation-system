@@ -60,7 +60,7 @@ def movie_feature(metadata_path, links_small_path, credits_path,keywords_path, \
     links_small['tmdbId'] = links_small['tmdbId'].astype('int')
     meta = meta.drop([19730, 29503, 35587])
     meta['id'] = meta['id'].astype('int')
-    meta['popularity'] = meta['popularity'].astype('int')
+    meta['popularity'] = meta[meta['popularity'].notnull()]['popularity'].astype('float')
     meta['year'] = pd.to_datetime(meta['release_date'], errors='coerce').apply(\
         lambda x: str(x).split('-')[0] if x != np.nan else np.nan)
     keywords['id'] = keywords['id'].astype('int')

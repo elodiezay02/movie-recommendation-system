@@ -24,11 +24,9 @@ def evaluate(pred_df, val_df):
     
     """
     result = pred_df.groupby('userId').apply(lambda x: check_movieId(x, val_df))
-    n_user = val_df.userId.nunique()
-    top_k = pred_df.groupby('userId').count().iloc[0]
-    top_k = int(top_k.iloc[0])
+    result = result.groupby('userId').sum() / result.groupby('userId').count()
 
-    return result.sum().sum() / (n_user*top_k)
+    return result.mean().mean()
 
 def precision_recall_at_k(prediction_df, threshold):
     """Return recall and precision, F-1 scrore for collaborative + hybrid

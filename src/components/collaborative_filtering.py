@@ -1,7 +1,7 @@
 
 import numpy as np
 import pandas as pd
-
+from surprise import dump
 
 
 from surprise import Dataset, Reader
@@ -11,6 +11,8 @@ from surprise import accuracy
 from surprise.dataset import DatasetAutoFolds
 
 from collections import defaultdict
+
+from evaluate_model import precision_recall_at_k, evaluate
 
 class CollaborativeFiltering:
     def __init__(self, algorithm=None):
@@ -29,11 +31,24 @@ class CollaborativeFiltering:
         full_testset = test.build_full_trainset()
         self.testset = full_testset.build_testset()
         
-    def fit_predict(self):
+    def fit(self):
     
         self.algorithm.fit(self.trainset)
+
+    def predict(self):
+
         predictions_test = self.algorithm.test(self.testset)
         self.predictions = predictions_test
+        rmse = accuracy.rmse(predictions_test)
+        mae = accuracy.mae(predictions_test)
+
+        file_name = str(self.algorithm).split('.')[-1].split()[0] + '_model'
+        dump.dump(file_name, algo=self.algorithm)
+
+        test_df = pd.DataFrame(self.predictions).drop(columns='details')
+        test_df.columns = ['userId', 'movieId', 'rating', 'pred_rating']
+        self.test_df = test_df
+        pre, recall, f_measure = precision_recall_at_k(test_df, 3.5)
         
-        return accuracy.rmse(predictions_test), accuracy.mae(predictions_test)
+        return pre, recall, f_measure
 
