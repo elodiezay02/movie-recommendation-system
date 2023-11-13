@@ -30,11 +30,11 @@ def evaluate(pred_df, val_df):
 
     return result.sum().sum() / (n_user*top_k)
 
-def precision_recall_at_k(test_df, threshold):
+def precision_recall_at_k(prediction_df, threshold):
     """Return recall and precision, F-1 scrore for collaborative + hybrid
 
     Args:
-        test_df: prediction dataframe, with 4 columns: userId, movieId, true_rating, pred_rating
+        prediction_df: prediction dataframe, with 4 columns: userId, movieId, true_rating, pred_rating
         threshold: if rating > threshold, movie is believed to be relevant
 
     Returns:
@@ -46,7 +46,7 @@ def precision_recall_at_k(test_df, threshold):
     recalls = dict()
     precisions = dict()
 
-    for userId, group in test_df.groupby('userId'):
+    for userId, group in prediction_df.groupby('userId'):
 
         filter_rel = group[group['rating'] > threshold]
         filter_rec = group[group['pred_rating'] > threshold]
