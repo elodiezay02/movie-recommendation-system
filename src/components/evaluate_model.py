@@ -28,7 +28,7 @@ def evaluate(pred_df, val_df):
     top_k = pred_df.groupby('userId').count().iloc[0]
     top_k = int(top_k.iloc[0])
 
-    return result.sum() / (n_user*top_k)
+    return result.sum().sum() / (n_user*top_k)
 
 def precision_recall_at_k(test_df, threshold):
     """Return recall and precision, F-1 scrore for collaborative + hybrid
