@@ -124,4 +124,4 @@ def movie_feature(metadata_path, links_small_path, credits_path,keywords_path, \
 # links_small = r'E:\School\DE_AN\Movie-Recommendation-System\src\data\links_small.csv'
 # movies_metadata = r'E:\School\DE_AN\Movie-Recommendation-System\src\data\movies_metadata.csv'
 # smd = movie_feature(movies_metadata, links_small, credits_, keywords, more_weight_on='director')
-# smd.head()
+# print(smd.columns)
